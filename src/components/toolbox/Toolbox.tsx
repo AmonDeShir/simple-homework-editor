@@ -38,7 +38,6 @@ const Toolbox: React.FC<Props> = ({ onOpenClick, onExportClick }: Props) => {
       <div className="toolbox__file-operations">
         <Button onClick={onExportClick}>Export</Button>
         <Button onClick={onOpenClick}>Open</Button>
-        {`${settings.brushColor}, \n ${settings.brushSize}, \n ${settings.rubberSize}`}
       </div>
 
       <div className="toolbox__tool-settings">

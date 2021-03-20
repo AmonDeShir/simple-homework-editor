@@ -2,12 +2,11 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import debounce from 'lodash.debounce';
 import { AppState } from '../../redux/store';
-import Brush from '../../tools/Brush';
-import Rubber from '../../tools/Rubber';
 import Tool from '../../tools/Tool';
 import './GraphicEditor.scss';
 import { addHistoryActions } from '../../redux/actions/PageActions';
 import { HistoryAction } from '../../redux/interfaces/HistoryAction';
+import Tools from '../../tools/Tools';
 
 const mapStateToProps = ({ page, tools }: AppState) => {
   const { history, image, id, pages } = page;
@@ -27,9 +26,6 @@ type State = {
 };
 
 class GraphicEditor extends Component<ReduxType, State> {
-  private readonly FINISH_DRAW_TOOL = -1;
-  private readonly tools = [new Brush(), new Rubber()];
-
   private imageRef: React.RefObject<HTMLImageElement>;
   private canvasRef: React.RefObject<HTMLCanvasElement>;
   private ctx: CanvasRenderingContext2D | null = null;
@@ -81,7 +77,7 @@ class GraphicEditor extends Component<ReduxType, State> {
         id: this.props.history.length + this.localHistory.length,
         scale: this.state.scale,
         settings: this.props.setting,
-        toolId: this.FINISH_DRAW_TOOL,
+        toolId: Tools.FINISH_DRAW_TOOL,
         x: 0,
         y: 0,
       },
@@ -92,7 +88,7 @@ class GraphicEditor extends Component<ReduxType, State> {
   };
 
   private get tool(): Tool {
-    return this.tools[this.props.selectedToolsId];
+    return Tools.all[this.props.selectedToolsId];
   }
 
   private finishDrawing = () => {
@@ -110,11 +106,14 @@ class GraphicEditor extends Component<ReduxType, State> {
     }
 
     this.canDraw = true;
+    this.tool.finishDrawing(this.ctx);
     this.tool.beginDrawing(this.ctx);
   };
 
   private continueDrawing = () => {
     if (this.canDraw && this.ctx) {
+      this.tool.finishDrawing(this.ctx);
+
       this.tool.beginDrawing(this.ctx);
     }
   };
@@ -129,12 +128,12 @@ class GraphicEditor extends Component<ReduxType, State> {
       const x = Math.floor(event.pageX - rect.left);
       const y = Math.floor(event.pageY - rect.top);
       const lastDrawedAction = this.localHistory[this.localHistory.length - 1];
-
-      if (
+      const isDrawingInTheSamePoint =
         lastDrawedAction &&
         x === lastDrawedAction.x &&
-        y === lastDrawedAction.y
-      ) {
+        y === lastDrawedAction.y;
+
+      if (isDrawingInTheSamePoint) {
         return;
       }
 
@@ -167,12 +166,10 @@ class GraphicEditor extends Component<ReduxType, State> {
     }
 
     if (prevProps.setting !== this.props.setting) {
-      this.tool.setSettings(this.props.setting);
-    }
-
-    if (prevProps.setting !== this.props.setting && this.ctx) {
-      this.tool.setSettings(this.props.setting);
-      this.tool.prepareCanvas(this.ctx);
+      debounce(() => {
+        this.tool.setSettings(this.props.setting);
+        if (this.ctx) this.tool.prepareCanvas(this.ctx);
+      }, 50);
     }
 
     if (prevProps.pageId !== this.props.pageId) {
@@ -234,10 +231,10 @@ class GraphicEditor extends Component<ReduxType, State> {
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
       history.forEach(({ toolId, x, y, settings, scale }) => {
-        const tool = this.tools[toolId];
+        const tool = Tools.all[toolId];
 
-        if (toolId === this.FINISH_DRAW_TOOL) {
-          this.tools[0].finishDrawing(ctx);
+        if (toolId === Tools.FINISH_DRAW_TOOL) {
+          Tools.all[0].finishDrawing(ctx);
           return;
         }
 

@@ -27,7 +27,9 @@ const loadImages = (onDoneCallback: (images: string[]) => void) => {
     images.push(image);
   });
 
-  onDoneCallback(images);
+  if (filePaths) {
+    onDoneCallback(images);
+  }
 };
 
 export default loadImages;
