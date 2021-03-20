@@ -1,0 +1,43 @@
+.toolbox {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  justify-content: center;
+
+  width: 15vw;
+  max-width: 150px;
+  min-width: 100px;
+  height: 100vh;
+  background-color: rgb(41, 40, 40);
+  box-shadow: -0.5px 1px 5px 0.5px rgba(0, 0, 0, 0.192);
+
+  &__file-operations {
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 20%;
+    max-height: 100px;
+    padding: 0 10px;
+  }
+
+  &__tool-settings {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+  }
+
+  &__tool-selection {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+
+    width: 100%;
+    height: 10%;
+    max-height: 50px;
+
+    display: flex;
+    justify-content: space-evenly;
+  }
+}
