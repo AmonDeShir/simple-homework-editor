@@ -1,12 +1,13 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { AppState } from '../redux/store';
+import { createNewPages } from '../redux/actions/PageActions';
 import Toolbox from '../components/toolbox/Toolbox';
 import PageSelector from '../components/page-selector/PageSelector';
 import GraphicEditor from '../components/graphic-editor/GraphicEditor';
-import loadImages from './loadImages';
-import { createNewPages } from '../redux/actions/PageActions';
-import pagesToPdf from './pagesToPdf';
-import { AppState } from '../redux/store';
+import pagesToPdf from '../utilities/pagesToPdf';
+import loadImages from '../utilities/loadImages';
+import getFilesPath, { Filters } from '../utilities/getFilesPath';
 import './Main.scss';
 
 const Main = () => {
@@ -20,7 +21,17 @@ const Main = () => {
           pagesToPdf(pages);
         }}
         onOpenClick={() => {
-          loadImages((images) => dispatch(createNewPages(images)));
+          getFilesPath(
+            {
+              message: 'Wybierz sprawdzany',
+              buttonLabel: 'Gotowe',
+              filters: [Filters.images],
+              multiselect: true,
+            },
+            (files) => {
+              loadImages(files, (images) => dispatch(createNewPages(images)));
+            }
+          );
         }}
       />
 
