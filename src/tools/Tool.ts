@@ -2,7 +2,6 @@ import { ToolsSetting } from '../redux/interfaces/ToolsSetting';
 
 export default abstract class Tool {
   abstract prepareCanvas(ctx: CanvasRenderingContext2D): void;
-
   abstract setSettings(settings: ToolsSetting): void;
 
   draw(posX: number, posY: number, ctx: CanvasRenderingContext2D): void {
@@ -11,11 +10,10 @@ export default abstract class Tool {
   }
 
   finishDrawing(ctx: CanvasRenderingContext2D) {
-    ctx.beginPath();
+    ctx.closePath();
   }
 
   beginDrawing(ctx: CanvasRenderingContext2D) {
-    ctx.closePath();
-    ctx.stroke();
+    ctx.beginPath();
   }
 }
