@@ -51,17 +51,22 @@ class GraphicEditor extends Component<ReduxType, State> {
   };
 
   private handleResize = (e: React.WheelEvent) => {
-    if (e.ctrlKey) {
-      const scaleDirection = Math.sign(e.deltaY) > 0 ? 1.05 : 0.95;
-      this.setState((prev) => ({
-        ...prev,
-        scale: prev.scale * scaleDirection,
-      }));
-    }
+    const scaleDirection = Math.sign(e.deltaY) > 0 ? 1.05 : 0.95;
+    this.setState((prev) => ({
+      ...prev,
+      scale: prev.scale * scaleDirection,
+    }));
   };
 
   private stopDrawing = () => {
     if (this.canDraw) {
+      this.handleStopDrawing();
+    }
+  };
+
+  private finishDrawing = () => {
+    if (this.ctx) {
+      this.canDraw = false;
       this.handleStopDrawing();
     }
   };
@@ -91,31 +96,34 @@ class GraphicEditor extends Component<ReduxType, State> {
     return Tools.all[this.props.selectedToolsId];
   }
 
-  private finishDrawing = () => {
-    if (!this.ctx) {
-      return;
-    }
-
-    this.canDraw = false;
-    this.handleStopDrawing();
-  };
-
   private startDrawing = () => {
-    if (!this.ctx) {
-      return;
+    if (this.ctx) {
+      this.canDraw = true;
+      this.handleStartDrawing();
     }
-
-    this.canDraw = true;
-    this.tool.finishDrawing(this.ctx);
-    this.tool.beginDrawing(this.ctx);
   };
 
   private continueDrawing = () => {
     if (this.canDraw && this.ctx) {
-      this.tool.finishDrawing(this.ctx);
-
-      this.tool.beginDrawing(this.ctx);
+      this.handleStartDrawing();
     }
+  };
+
+  private handleStartDrawing = () => {
+    if (!this.ctx) {
+      return;
+    }
+
+    this.localHistory.push({
+      id: this.props.history.length + this.localHistory.length,
+      scale: this.state.scale,
+      settings: this.props.setting,
+      toolId: Tools.BEGIN_DRAW_TOOL,
+      x: 0,
+      y: 0,
+    });
+
+    this.tool.beginDrawing(this.ctx);
   };
 
   private drawTool = debounce((event: React.MouseEvent) => {
@@ -235,6 +243,11 @@ class GraphicEditor extends Component<ReduxType, State> {
 
         if (toolId === Tools.FINISH_DRAW_TOOL) {
           Tools.all[0].finishDrawing(ctx);
+          return;
+        }
+
+        if (toolId === Tools.BEGIN_DRAW_TOOL) {
+          Tools.all[0].beginDrawing(ctx);
           return;
         }
 

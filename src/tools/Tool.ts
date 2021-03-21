@@ -10,11 +10,10 @@ export default abstract class Tool {
   }
 
   finishDrawing(ctx: CanvasRenderingContext2D) {
-    ctx.beginPath();
+    ctx.closePath();
   }
 
   beginDrawing(ctx: CanvasRenderingContext2D) {
-    ctx.closePath();
-    ctx.stroke();
+    ctx.beginPath();
   }
 }
