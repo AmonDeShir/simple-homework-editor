@@ -5,10 +5,11 @@ import { createNewPages } from '../redux/actions/PageActions';
 import Toolbox from '../components/toolbox/Toolbox';
 import PageSelector from '../components/page-selector/PageSelector';
 import GraphicEditor from '../components/graphic-editor/GraphicEditor';
-import pagesToPdf from '../utilities/pagesToPdf';
+import pagesToPdf from '../utilities/convertToPdf';
 import loadImages from '../utilities/loadImages';
 import getFilesPath, { Filters } from '../utilities/getFilesPath';
 import './Main.scss';
+import pagesToImages from '../utilities/pagesToImages';
 
 const Main = () => {
   const dispatch = useDispatch();
@@ -18,7 +19,7 @@ const Main = () => {
     <div className="main">
       <Toolbox
         onExportClick={() => {
-          pagesToPdf(pages);
+          pagesToImages(pages, (images) => pagesToPdf(images));
         }}
         onOpenClick={() => {
           getFilesPath(
