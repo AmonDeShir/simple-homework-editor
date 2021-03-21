@@ -32,23 +32,28 @@ const calcScale = (imageWidth: number, imageHeight: number, pdfWidth: number, pd
 const generateImageByCanvas = async (page: Page, width: number, height: number) => {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d') as Ctx2d;
-  const img = new Image();
+  const canvasTemp = new Image();
+  const background = new Image();
 
-  img.src = page.image;
+  background.src = page.image;
+  await background.decode();
 
-  await img.decode();
+  const scale = calcScale(background.naturalWidth, background.naturalHeight, width, height);
 
-  const scale = calcScale(img.naturalWidth, img.naturalHeight, width, height);
+  canvas.setAttribute('width', `${(background.naturalWidth) * scale}`);
+  canvas.setAttribute('height', `${(background.naturalHeight) * scale}`);
 
-  canvas.setAttribute('width', `${(img.naturalWidth) * scale}`);
-  canvas.setAttribute('height', `${(img.naturalHeight) * scale}`);
-
-  ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvas.width, canvas.height);
   page.history.forEach((action) => drawHistoryAction(action, ctx, scale));
-  document.body.appendChild(canvas);
+  canvasTemp.src = canvas.toDataURL('image/png');
+  await canvasTemp.decode();
+
+  Tools.all[0].prepareCanvas(ctx);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(background, 0, 0, background.width, background.height, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(canvasTemp, 0, 0, canvasTemp.width, canvasTemp.height, 0, 0, canvas.width, canvas.height);
 
   return {
-    src: canvas.toDataURL('image/jpeg'),
+    src: canvas.toDataURL('image/png'),
     width: canvas.width ,
     height: canvas.height,
     x:(width - canvas.width) / 2,
@@ -70,7 +75,7 @@ function pagesToPdf(pages: Page[]) {
   Promise.all(imgsProise).then((imgs) => {
     imgs.forEach(({ src, x, y, width, height }) => {
       const pdfPage = pdf.addPage('a4', 'p');
-      pdfPage.addImage(src, 'JPEG', x / mmToPx, y / mmToPx, width / mmToPx, height / mmToPx);
+      pdfPage.addImage(src, 'PNG', x / mmToPx, y / mmToPx, width / mmToPx, height / mmToPx);
     });
 
     pdf.deletePage(1);
