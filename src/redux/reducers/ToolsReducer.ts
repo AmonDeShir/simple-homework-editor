@@ -7,9 +7,9 @@ import {
 const initialStateTools: ToolsStateType = {
   selectedToolsId: 0,
   setting: {
-    brushColor: '#f3f211',
-    brushSize: 20,
-    rubberSize: 20,
+    brushColor: '#ff0000',
+    brushSize: 5,
+    rubberSize: 70,
   },
 };
 
