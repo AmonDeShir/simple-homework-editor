@@ -3,11 +3,12 @@ import './Button.scss';
 
 type Props = JSX.ElementChildrenAttribute & {
   onClick?: () => void;
+  className?: string | undefined;
 };
 
-const Button: React.FC<Props> = ({ children, onClick }: Props) => (
+const Button = ({ children, className, onClick }: Props) => (
   <input
-    className="button"
+    className={`button ${className ? `button--${className}` : ''}`}
     type="button"
     value={`${children}`}
     onClick={onClick}
@@ -16,6 +17,7 @@ const Button: React.FC<Props> = ({ children, onClick }: Props) => (
 
 Button.defaultProps = {
   onClick: () => {},
+  className: undefined,
 };
 
 export default Button;

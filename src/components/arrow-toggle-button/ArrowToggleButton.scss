@@ -1,0 +1,45 @@
+.arrow-toggle-btn {
+  width: 25px;
+  height: 26px;
+  padding: 0;
+  margin: 0;
+
+  background-color: rgb(44, 84, 216);
+  font-weight: lighter;
+  color: white;
+  font-size: 18px;
+
+  border: none;
+  border-radius: 2px;
+
+  box-shadow: -0.5px 1px 5px 0.5px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s;
+
+  &--false {
+    transform: rotateZ(180deg);
+
+    &:hover {
+      cursor: pointer;
+      -webkit-font-smoothing: subpixel-antialiased;
+      transform: translate3d(0%, 0%, 0) scale(1.1, 1.1) rotateZ(180deg);
+    }
+
+    &:active {
+      transform: rotateZ(0deg);
+    }
+  }
+
+  &--true {
+    transform: rotateZ(0deg);
+
+    &:active {
+      transform: rotateZ(180deg);
+    }
+
+    &:hover {
+      cursor: pointer;
+      -webkit-font-smoothing: subpixel-antialiased;
+      transform: translate3d(0%, 0%, 0) scale(1.1, 1.1) rotateZ(0deg);
+    }
+  }
+}
