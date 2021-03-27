@@ -7,7 +7,7 @@ export interface Image extends Placeable {
   src: string
 }
 
-function generatePdf(images: Image[]) {
+function generatePdf(images: Image[], fileName: string) {
   const pdf = new jsPDF('p', 'mm', 'a4');
 
   images.forEach((image) => {
@@ -18,7 +18,7 @@ function generatePdf(images: Image[]) {
   });
 
   pdf.deletePage(1);
-  pdf?.save('Done.pdf');
+  pdf?.save(`${fileName}.pdf`);
 }
 
 export default generatePdf

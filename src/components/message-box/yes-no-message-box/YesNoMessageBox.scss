@@ -1,0 +1,36 @@
+.yes-no-message-box {
+  position: fixed;
+  z-index: 10;
+
+  width: 100vw;
+  height: 100vh;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background-color: rgba(0, 0, 0, 0.616);
+
+  &__container {
+    width: 280px;
+    height: 100px;
+    background-color: rgb(41, 40, 40);
+    box-shadow: -0.5px 1px 5px 0.5px black;
+    padding: 0 10px;
+
+    p {
+      color: white;
+      text-align: center;
+    }
+
+    &__center-buttons {
+      display: flex;
+      justify-content: space-evenly;
+
+      .button {
+        max-width: 100px;
+        height: 25px;
+      }
+    }
+  }
+}

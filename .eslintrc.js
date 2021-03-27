@@ -9,6 +9,7 @@ module.exports = {
     'class-methods-use-this': 'off',
     'no-plusplus': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
+    'import/extensions': 'off',
   },
   parserOptions: {
     ecmaVersion: 2020,

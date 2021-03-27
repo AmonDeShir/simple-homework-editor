@@ -8,7 +8,7 @@ type Filter = {
 type Options = {
   message?: string;
   buttonLabel?: string;
-  multiselect?: boolean;
+  multiSelections?: boolean;
   filters?: Filter[];
 };
 
@@ -22,7 +22,7 @@ function getFilesPath(options: Options, onDoneCallback: Callback) {
     filters: options.filters || [],
   };
 
-  if (options.multiselect) {
+  if (options.multiSelections) {
     openDialogOptions.properties?.push('multiSelections');
   }
 
@@ -39,6 +39,8 @@ export const Filters = {
     name: 'Dokument word',
     extensions: ['docx'],
   },
+  json: { name: 'json', extensions: ['json'] },
+  txt: { name: 'txt', extensions: ['txt'] },
 };
 
 export default getFilesPath;
