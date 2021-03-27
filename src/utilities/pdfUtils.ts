@@ -34,7 +34,7 @@ const PdfUtils = {
     };
   },
 
-  converPxToMM: <T extends Placeable>(object: T): T => {
+  convertPxToMM: <T extends Placeable>(object: T): T => {
     return {
       ...object,
       width: object.width / PdfUtils.mmToPx,

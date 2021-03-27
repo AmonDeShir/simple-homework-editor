@@ -1,13 +1,14 @@
 import { HistoryAction } from '../redux/interfaces/HistoryAction';
-import { Page } from '../redux/interfaces/Page';
+import { ImagePage } from '../redux/interfaces/Page';
+import { HistoricalToolbox } from '../tools/Tool';
 import Tools from '../tools/Tools';
-import { Image } from './convertToPdf';
+import { Image } from './generatePdf';
 import PdfUtils from './pdfUtils';
 
 type Ctx2d = CanvasRenderingContext2D;
 
 class PageToImage {
-  private page: Page;
+  private page: ImagePage;
   private resultImage: Promise<Image>;
   private background: Promise<HTMLImageElement>;
 
@@ -15,9 +16,9 @@ class PageToImage {
   private ctx = this.canvas.getContext('2d') as Ctx2d;
   private scale = 0;
 
-  constructor(page: Page) {
+  constructor(page: ImagePage) {
     this.page = page;
-    this.background = this.loadImage(this.page.image);
+    this.background = this.loadImage(this.page.data);
     this.resultImage = this.generateImage();
   }
 
@@ -81,44 +82,22 @@ class PageToImage {
   }
 
   private drawHistoryAction(action: HistoryAction) {
-    switch (action.toolId) {
-      case Tools.BEGIN_DRAW_TOOL:
-        this.beginDrawing();
-        break;
+    const tool = Tools.all[action.toolId];
+    const toolbox = this.getToolbox(action);
 
-      case Tools.FINISH_DRAW_TOOL:
-        this.finishDrawing();
-        break;
-
-      default:
-        this.drawTool(action);
-    }
+    tool.historyAction(toolbox);
   }
 
-  private finishDrawing() {
-    this.ctx.closePath();
-  }
-
-  private beginDrawing() {
-    this.ctx.beginPath();
-  }
-
-  private drawTool(action: HistoryAction) {
-    const { settings, toolId, x, y } = action;
-    const tool = Tools.all[toolId];
-
-    tool.setSettings({
-      ...settings,
-      brushSize: settings.brushSize * this.scale,
-    });
-
-    tool.prepareCanvas(this.ctx);
-
-    tool.draw(
-      Math.floor(x / action.scale) * this.scale,
-      Math.floor(y / action.scale) * this.scale,
-      this.ctx
-    );
+  private getToolbox(action: HistoryAction): HistoricalToolbox {
+    return {
+      ctx: this.ctx,
+      history: action,
+      step: action.step,
+      actualPageSettings: {
+        rotation: 0,
+        scale: this.scale,
+      },
+    };
   }
 
   private async copyCanvasToTemp() {
@@ -132,7 +111,6 @@ class PageToImage {
 
   private clearCanvas() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    Tools.all[0].prepareCanvas(this.ctx);
   }
 
   private drawScaledImage(image: HTMLImageElement) {
@@ -156,12 +134,14 @@ class PageToImage {
 
 type Callback = (images: Image[]) => void;
 
-export default async function pagesToImages(pages: Page[], onDone: Callback) {
+async function pagesToImages(pages: ImagePage[], onDone: Callback) {
   Promise.all(
     pages.map((page) => {
       return new PageToImage(page).get;
     })
   )
-    .then((imgs) => onDone(imgs.map(PdfUtils.converPxToMM)))
+    .then((images) => onDone(images.map(PdfUtils.convertPxToMM)))
     .catch(() => {});
 }
+
+export default pagesToImages;

@@ -2,7 +2,7 @@
   "name": "simple-homework-editor",
   "productName": "Simple Homework Editor",
   "description": "Simple paint like photo editor with pdf saving potion",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "main": "./main.prod.js",
   "author": {
     "name": "Amon Purgał",

@@ -1,21 +1,36 @@
-import { ToolsSetting } from '../redux/interfaces/ToolsSetting';
-import Tool from './Tool';
+import Brush from './Brush';
+import { RendererToolbox } from './Tool';
 
-export default class Rubber extends Tool {
-  private settings = {
+export default class Rubber extends Brush {
+  public static id = 1;
+
+  #settings = {
     size: 1,
   };
 
-  setSettings({ rubberSize }: ToolsSetting) {
-    this.settings = {
-      size: rubberSize,
-    };
+  get settings() {
+    return { ...this.#settings, color: '' };
   }
 
-  prepareCanvas(ctx: CanvasRenderingContext2D): void {
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.lineWidth = this.settings.size;
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-  }
+  updateSettings = ({ setting }: RendererToolbox) => {
+    this.#settings = {
+      size: setting.rubberSize,
+    };
+  };
+
+  prepareCanvas = ({ ctx, page }: RendererToolbox) => {
+    if (ctx.globalCompositeOperation !== 'destination-out')
+      ctx.globalCompositeOperation = 'destination-out';
+
+    if (ctx.lineWidth !== this.#settings.size * page.settings.scale)
+      ctx.lineWidth = this.#settings.size * page.settings.scale;
+
+    if (ctx.lineJoin !== 'round') {
+      ctx.lineJoin = 'round';
+    }
+
+    if (ctx.lineCap !== 'round') {
+      ctx.lineCap = 'round';
+    }
+  };
 }

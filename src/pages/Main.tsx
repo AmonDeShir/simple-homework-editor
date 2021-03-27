@@ -1,25 +1,66 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppState } from '../redux/store';
-import { createNewPages } from '../redux/actions/PageActions';
 import Toolbox from '../components/toolbox/Toolbox';
 import PageSelector from '../components/page-selector/PageSelector';
 import GraphicEditor from '../components/graphic-editor/GraphicEditor';
-import pagesToPdf from '../utilities/convertToPdf';
+import ResultPanel from '../components/result-panel/ResultPanel';
+import generatePdf from '../utilities/generatePdf';
 import loadImages from '../utilities/loadImages';
 import getFilesPath, { Filters } from '../utilities/getFilesPath';
-import './Main.scss';
 import pagesToImages from '../utilities/pagesToImages';
+import TextboxMessageBox from '../components/message-box/textbox-message-box/TextboxMessageBox';
+import YesNoMessageBox from '../components/message-box/yes-no-message-box/YesNoMessageBox';
+import DrawIf from '../utilities/DrawIf';
+import './Main.scss';
+import {
+  createNewImagePages,
+  newFile,
+  setFileName,
+} from '../redux/actions/PageActions';
 
 const Main = () => {
   const dispatch = useDispatch();
-  const pages = useSelector((state: AppState) => state.page.pages);
+  const imagePages = useSelector((state: AppState) => state.page.imagePages);
+  const fileName = useSelector((state: AppState) => state.page.fileName);
+
+  const [
+    drawNewFileConfirmationMessage,
+    setDrawNewFileConfirmationMessage,
+  ] = useState(false);
+
+  const drawGraphicEditor =
+    useSelector((state: AppState) => {
+      return state.page.page && state.page.page.type === 'Image';
+    }) ?? false;
+
+  const drawPageSelector =
+    useSelector((state: AppState) => {
+      return (
+        state.page.imagePages.length > 0 || state.page.textPages.length > 0
+      );
+    }) ?? false;
+
+  const drawSetFileNameMessage =
+    useSelector((state: AppState) => {
+      return state.page.fileName.length === 0;
+    }) ?? false;
+
+  const createNewFile = () => {
+    setDrawNewFileConfirmationMessage(false);
+    dispatch(newFile());
+  };
+
+  const setNewFileName = (name: string) => {
+    dispatch(setFileName(name));
+  };
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions
     <div className="main">
       <Toolbox
         onExportClick={() => {
-          pagesToImages(pages, (images) => pagesToPdf(images));
+          pagesToImages(imagePages, (images) => generatePdf(images, fileName));
         }}
         onOpenClick={() => {
           getFilesPath(
@@ -27,17 +68,42 @@ const Main = () => {
               message: 'Wybierz sprawdzany',
               buttonLabel: 'Gotowe',
               filters: [Filters.images],
-              multiselect: true,
+              multiSelections: true,
             },
             (files) => {
-              loadImages(files, (images) => dispatch(createNewPages(images)));
+              loadImages(files, (images) => {
+                dispatch(createNewImagePages(images));
+              });
             }
           );
         }}
+        onNewFileClick={() => {
+          setDrawNewFileConfirmationMessage(true);
+        }}
       />
+      <DrawIf condition={drawGraphicEditor}>
+        <GraphicEditor />
+      </DrawIf>
 
-      <GraphicEditor />
-      <PageSelector />
+      <DrawIf condition={drawPageSelector}>
+        <PageSelector />
+      </DrawIf>
+
+      <DrawIf condition={drawNewFileConfirmationMessage}>
+        <YesNoMessageBox
+          onNoClick={() => setDrawNewFileConfirmationMessage(false)}
+          onYesClick={createNewFile}
+        >
+          Czy chcesz utworzyć nowy plik?
+        </YesNoMessageBox>
+      </DrawIf>
+
+      <DrawIf condition={drawSetFileNameMessage}>
+        <TextboxMessageBox buttonLabel="Gotowe" onClick={setNewFileName}>
+          Wprowadź nazwe nowego plik
+        </TextboxMessageBox>
+      </DrawIf>
+      <ResultPanel />
     </div>
   );
 };
