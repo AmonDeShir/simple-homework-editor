@@ -1,6 +1,6 @@
 import fs from 'fs';
 import React, { useState } from 'react';
-import DrawIf from '../../utilities/drawIf';
+import DrawIf from '../../utilities/DrawIf';
 import getFilesPath, { Filters } from '../../utilities/getFilesPath';
 import ArrowToggleButton from '../arrow-toggle-button/ArrowToggleButton';
 import Button from '../button/Button';

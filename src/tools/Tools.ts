@@ -1,13 +1,22 @@
 import Brush from './Brush';
+import Move from './Move';
+import Rotate from './Rotate';
 import Rubber from './Rubber';
 import Tool from './Tool';
 
 export default class Tools {
-  private static readonly TOOLS = [new Brush(), new Rubber()];
-  public static readonly FINISH_DRAW_TOOL = -1;
-  public static readonly BEGIN_DRAW_TOOL = -2;
+  private static TOOLS: Tool[] = [];
+
+  public static init() {
+    Tools.TOOLS[Brush.id] = new Brush();
+    Tools.TOOLS[Rubber.id] = new Rubber();
+    Tools.TOOLS[Move.id] = new Move();
+    Tools.TOOLS[Rotate.id] = new Rotate();
+  }
 
   public static get all(): Tool[] {
     return this.TOOLS;
   }
 }
+
+Tools.init();

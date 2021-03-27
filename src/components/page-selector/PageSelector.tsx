@@ -10,8 +10,11 @@ import {
 
 const PageSelector: React.FC = () => {
   const dispatch = useDispatch();
-  const pages = useSelector((state: AppState) => state.page.pages);
   const selectedPage = useSelector((state: AppState) => state.page.id);
+
+  const pages = useSelector((state: AppState) => {
+    return state.page.imagePages.length + state.page.textPages.length;
+  });
 
   const isSelected = (id: number) => {
     return selectedPage === id ? 'page-selector__button--selected' : '';
@@ -25,13 +28,13 @@ const PageSelector: React.FC = () => {
         onClick={() => dispatch(selectPreviousPage())}
       />
 
-      {pages.map(({ id }) => (
+      {Array.from(Array(pages).keys()).map((i) => (
         <input
-          className={isSelected(id)}
-          key={id}
+          className={isSelected(i)}
+          key={i}
           type="button"
-          value={id + 1}
-          onClick={() => dispatch(selectPage(id))}
+          value={i + 1}
+          onClick={() => dispatch(selectPage(i))}
         />
       ))}
 

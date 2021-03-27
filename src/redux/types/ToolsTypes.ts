@@ -5,7 +5,7 @@ export const SELECT_TOOL = 'SELECT_TOOL';
 
 export type ToolsStateType = {
   setting: ToolsSetting;
-  selectedToolsId: number;
+  selectedToolId: number;
 };
 
 export interface EditToolsActionType {

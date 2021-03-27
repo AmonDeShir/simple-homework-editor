@@ -5,7 +5,7 @@ import Toolbox from '../components/toolbox/Toolbox';
 import PageSelector from '../components/page-selector/PageSelector';
 import GraphicEditor from '../components/graphic-editor/GraphicEditor';
 import ResultPanel from '../components/result-panel/ResultPanel';
-import pagesToPdf from '../utilities/convertToPdf';
+import generatePdf from '../utilities/generatePdf';
 import loadImages from '../utilities/loadImages';
 import getFilesPath, { Filters } from '../utilities/getFilesPath';
 import pagesToImages from '../utilities/pagesToImages';
@@ -60,7 +60,7 @@ const Main = () => {
     <div className="main">
       <Toolbox
         onExportClick={() => {
-          pagesToImages(imagePages, (images) => pagesToPdf(images, fileName));
+          pagesToImages(imagePages, (images) => generatePdf(images, fileName));
         }}
         onOpenClick={() => {
           getFilesPath(

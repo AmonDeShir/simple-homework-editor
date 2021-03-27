@@ -5,7 +5,7 @@ import {
 } from '../types/ToolsTypes';
 
 const initialStateTools: ToolsStateType = {
-  selectedToolsId: 0,
+  selectedToolId: 0,
   setting: {
     brushColor: '#ff0000',
     brushSize: 5,
@@ -31,7 +31,7 @@ const ToolsReducer = (
     case 'SELECT_TOOL': {
       return {
         ...state,
-        selectedToolsId: action.payload,
+        selectedToolId: action.payload,
       };
     }
 
