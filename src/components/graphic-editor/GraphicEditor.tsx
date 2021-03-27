@@ -6,7 +6,7 @@ import Tool, { Canvas, Ctx2d, RendererToolbox } from '../../tools/Tool';
 import { HistoryAction } from '../../redux/interfaces/HistoryAction';
 import Tools from '../../tools/Tools';
 import { ImagePage } from '../../redux/interfaces/Page';
-import Editor, { EditorType } from '../Editor/Editor';
+import Editor, { EditorType } from '../editor/Editor';
 
 const mapStateToProps = ({ page, tools }: AppState) => {
   const { selectedToolId, setting } = tools;

@@ -4,7 +4,7 @@ import DrawIf from '../../utilities/DrawIf';
 import getFilesPath, { Filters } from '../../utilities/getFilesPath';
 import ArrowToggleButton from '../arrow-toggle-button/ArrowToggleButton';
 import Button from '../button/Button';
-import NumberPicker from '../counter/NumberPicker';
+import NumberPicker from '../number-picker/NumberPicker';
 
 import './ResultPanel.scss';
 

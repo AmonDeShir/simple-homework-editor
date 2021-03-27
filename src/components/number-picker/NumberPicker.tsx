@@ -20,7 +20,7 @@ const NumberPicker = ({ startValue, step = 1, onChange }: Props) => {
   };
 
   return (
-    <div className="counter">
+    <div className="number-picker">
       <Button onClick={() => setValue((prev) => prev - step)}>{'<'}</Button>
       <input
         value={value}
