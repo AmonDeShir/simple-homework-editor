@@ -2,294 +2,165 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import debounce from 'lodash.debounce';
 import { AppState } from '../../redux/store';
-import Tool from '../../tools/Tool';
-import './GraphicEditor.scss';
-import { addHistoryActions } from '../../redux/actions/PageActions';
+import Tool, { Canvas, Ctx2d, RendererToolbox } from '../../tools/Tool';
 import { HistoryAction } from '../../redux/interfaces/HistoryAction';
 import Tools from '../../tools/Tools';
+import { ImagePage } from '../../redux/interfaces/Page';
+import Editor, { EditorType } from '../Editor/Editor';
 
 const mapStateToProps = ({ page, tools }: AppState) => {
-  const { history, image, id, pages } = page;
-  const { selectedToolsId, setting } = tools;
+  const { selectedToolId, setting } = tools;
+  const selectedPage = page.page as ImagePage;
 
-  return { history, pageId: id, pages, image, selectedToolsId, setting };
+  return {
+    history: selectedPage?.history || [],
+    pageSettings: selectedPage?.settings,
+    pageId: page.id,
+    image: selectedPage?.data || '',
+    selectedToolId,
+    setting,
+    selectedPage,
+    pages: page.imagePages.length,
+  };
 };
 
-const dispatchToProps = {
-  addHistoryActions,
-};
+type Props = ReturnType<typeof mapStateToProps>;
 
-type ReduxType = ReturnType<typeof mapStateToProps> & typeof dispatchToProps;
+class GraphicEditor extends Component<Props> {
+  private editor?: EditorType;
 
-type State = {
-  scale: number;
-};
+  private handleMouseMove = (toolbox: RendererToolbox) => {
+    if (this.canDraw(toolbox)) {
+      requestAnimationFrame(() => {
+        this.tool.onMouseMove(toolbox);
+      });
+    }
+  };
 
-class GraphicEditor extends Component<ReduxType, State> {
-  private imageRef: React.RefObject<HTMLImageElement>;
-  private canvasRef: React.RefObject<HTMLCanvasElement>;
-  private ctx: CanvasRenderingContext2D | null = null;
-  private canDraw = false;
-  private localHistory: HistoryAction[] = [];
-
-  public constructor(props: ReduxType) {
-    super(props);
-
-    this.state = {
-      scale: 1,
-    };
-
-    this.imageRef = React.createRef();
-    this.canvasRef = React.createRef();
+  private canDraw({ posX, posY, ctx }: RendererToolbox) {
+    return (
+      !this.isDrawingInTheSamePoint(posX, posY) &&
+      !this.isDrawingOutsideTheCanvas(posX, posY, ctx.canvas)
+    );
   }
 
-  public componentDidMount = () => {
-    const canvas = this.canvasRef.current;
+  private isDrawingInTheSamePoint(x: number, y: number) {
+    return (
+      this.lastDrawnAction &&
+      x === this.lastDrawnAction.x &&
+      y === this.lastDrawnAction.y
+    );
+  }
 
-    this.ctx = canvas?.getContext('2d') || null;
-    this.setCanvasSize();
-  };
+  private get lastDrawnAction() {
+    return this.props.history[this.props.history.length - 1];
+  }
 
-  private handleResize = (e: React.WheelEvent) => {
-    const scaleDirection = Math.sign(e.deltaY) > 0 ? 1.05 : 0.95;
-    this.setState((prev) => ({
-      ...prev,
-      scale: prev.scale * scaleDirection,
-    }));
-  };
-
-  private stopDrawing = () => {
-    if (this.canDraw) {
-      this.handleStopDrawing();
-    }
-  };
-
-  private finishDrawing = () => {
-    if (this.ctx) {
-      this.canDraw = false;
-      this.handleStopDrawing();
-    }
-  };
-
-  private handleStopDrawing = () => {
-    if (!this.ctx) {
-      return;
-    }
-
-    this.props.addHistoryActions([
-      ...this.localHistory,
-      {
-        id: this.props.history.length + this.localHistory.length,
-        scale: this.state.scale,
-        settings: this.props.setting,
-        toolId: Tools.FINISH_DRAW_TOOL,
-        x: 0,
-        y: 0,
-      },
-    ]);
-
-    this.localHistory = [];
-    this.tool.finishDrawing(this.ctx);
-  };
+  private isDrawingOutsideTheCanvas(x: number, y: number, canvas: Canvas) {
+    return x < 0 || y < 0 || x > canvas.width || y > canvas.height;
+  }
 
   private get tool(): Tool {
-    return Tools.all[this.props.selectedToolsId];
+    return Tools.all[this.props.selectedToolId];
   }
 
-  private startDrawing = () => {
-    if (this.ctx) {
-      this.canDraw = true;
-      this.handleStartDrawing();
-    }
-  };
-
-  private continueDrawing = () => {
-    if (this.canDraw && this.ctx) {
-      this.handleStartDrawing();
-    }
-  };
-
-  private handleStartDrawing = () => {
-    if (!this.ctx) {
-      return;
+  public componentDidUpdate(prevProps: Props) {
+    if (prevProps.selectedToolId !== this.props.selectedToolId) {
+      this.handleToolChange();
     }
 
-    this.localHistory.push({
-      id: this.props.history.length + this.localHistory.length,
-      scale: this.state.scale,
-      settings: this.props.setting,
-      toolId: Tools.BEGIN_DRAW_TOOL,
-      x: 0,
-      y: 0,
-    });
-
-    this.tool.beginDrawing(this.ctx);
-  };
-
-  private drawTool = debounce((event: React.MouseEvent) => {
-    const { setting, selectedToolsId } = this.props;
-    const { scale } = this.state;
-    const img = this.imageRef.current;
-
-    if (this.canDraw && this.ctx && img) {
-      const rect = this.ctx.canvas.getBoundingClientRect();
-      const x = Math.floor(event.pageX - rect.left);
-      const y = Math.floor(event.pageY - rect.top);
-      const lastDrawedAction = this.localHistory[this.localHistory.length - 1];
-      const isDrawingInTheSamePoint =
-        lastDrawedAction &&
-        x === lastDrawedAction.x &&
-        y === lastDrawedAction.y;
-
-      if (isDrawingInTheSamePoint) {
-        return;
-      }
-
-      this.tool.setSettings({
-        ...setting,
-        brushSize: setting.brushSize * scale,
-      });
-
-      requestAnimationFrame(() => {
-        if (this.ctx) {
-          this.tool.prepareCanvas(this.ctx);
-          this.tool.draw(x, y, this.ctx);
-        }
-      });
-
-      this.localHistory.push({
-        id: this.props.history.length + this.localHistory.length,
-        settings: { ...setting },
-        toolId: selectedToolsId,
-        scale,
-        x,
-        y,
-      });
-    }
-  }, 1);
-
-  public componentDidUpdate = (prevProps: ReduxType, prevState: State) => {
-    if (this.state.scale !== prevState.scale) {
-      this.rescaleEditor();
-    }
-
-    if (prevProps.setting !== this.props.setting) {
-      debounce(() => {
-        this.tool.setSettings(this.props.setting);
-        if (this.ctx) this.tool.prepareCanvas(this.ctx);
-      }, 50);
+    if (prevProps.pageSettings.scale !== this.props.pageSettings.scale) {
+      this.rerenderCanvas();
     }
 
     if (prevProps.pageId !== this.props.pageId) {
       this.rerenderCanvas();
+      this.handleToolChange();
     }
-  };
+  }
 
-  public rescaleEditor = () => {
-    const { scale } = this.state;
-    const canvas = this.canvasRef.current;
-    const img = this.imageRef.current;
-
-    if (!canvas || !img || !this.ctx) {
-      return;
-    }
-
-    const transformValue = `scale(${scale}, ${scale})`;
-
-    img.style.setProperty('transform', transformValue);
-    canvas.style.setProperty('transform', transformValue);
-
-    canvas.style.setProperty('width', `${img.naturalWidth}px`);
-    canvas.style.setProperty('height', `${img.naturalHeight}px`);
-
-    this.setCanvasSize();
-    this.setState((prev) => ({ ...prev, scaleNeedsUpdate: false }));
-  };
-
-  public setCanvasSize = () => {
-    const canvas = this.canvasRef.current;
-    const img = this.imageRef.current;
-    const { scale } = this.state;
-
-    if (!canvas || !img) {
-      return;
-    }
-
-    const canvasSize = {
-      width: img.naturalWidth * scale,
-      height: img.naturalHeight * scale,
-    };
-
-    canvas.setAttribute('width', `${canvasSize.width}`);
-    canvas.setAttribute('height', `${canvasSize.height}`);
-
-    this.rerenderCanvas();
+  private handleToolChange = () => {
+    this.editor?.useToolbox((toolbox) => {
+      this.tool.prepareCanvas(toolbox);
+    });
   };
 
   private rerenderCanvas = debounce(() => {
-    const { ctx } = this;
-
-    if (!ctx) {
-      return;
-    }
-
-    requestAnimationFrame(() => {
-      const history = [...this.props.history];
-
-      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-      history.forEach(({ toolId, x, y, settings, scale }) => {
-        const tool = Tools.all[toolId];
-
-        if (toolId === Tools.FINISH_DRAW_TOOL) {
-          Tools.all[0].finishDrawing(ctx);
-          return;
-        }
-
-        if (toolId === Tools.BEGIN_DRAW_TOOL) {
-          Tools.all[0].beginDrawing(ctx);
-          return;
-        }
-
-        tool.setSettings({
-          ...settings,
-          brushSize: settings.brushSize * this.state.scale,
-        });
-        tool.prepareCanvas(ctx);
-        tool.draw(
-          Math.floor((x / scale) * this.state.scale),
-          Math.floor((y / scale) * this.state.scale),
-          ctx
-        );
-      });
+    this.editor?.useToolbox(({ ctx }) => {
+      this.drawHistory(ctx);
     });
   }, 50);
 
-  public render() {
-    const { image } = this.props;
+  private drawHistory(ctx: Ctx2d) {
+    const history = [...this.props.history];
 
+    requestAnimationFrame(() => {
+      this.prepareCanvas(ctx, history[0]);
+
+      history.forEach((action, index) => {
+        if (this.wasToolChanged(action, history[index - 1])) {
+          this.changeTool(ctx, action);
+        }
+
+        this.drawHistoricalAction(ctx, action);
+      });
+    });
+  }
+
+  private prepareCanvas(ctx: Ctx2d, action?: HistoryAction) {
+    if (ctx && action) {
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      this.changeTool(ctx, action);
+    }
+  }
+
+  private changeTool(ctx: Ctx2d, action: HistoryAction) {
+    const tool = Tools.all[action.toolId];
+
+    tool.updateSettings(this.getHistoricalRendererToolbox(ctx, action));
+    tool.prepareCanvas(this.getHistoricalRendererToolbox(ctx, action));
+  }
+
+  private drawHistoricalAction(ctx: Ctx2d, action: HistoryAction) {
+    const tool = Tools.all[action.toolId];
+    const toolbox = this.getHistoricalToolbox(ctx, action);
+
+    tool.historyAction(toolbox);
+  }
+
+  private getHistoricalRendererToolbox(ctx: Ctx2d, action: HistoryAction) {
+    return Tool.getRendererToolbox(this.getHistoricalToolbox(ctx, action));
+  }
+
+  private getHistoricalToolbox(ctx: Ctx2d, action: HistoryAction) {
+    return {
+      ctx,
+      history: action,
+      actualPageSettings: this.props.pageSettings,
+      step: action.step,
+    };
+  }
+
+  private wasToolChanged(action?: HistoryAction, prevAction?: HistoryAction) {
+    return action?.toolId !== prevAction?.toolId;
+  }
+
+  public render() {
     return (
-      <div className="graphic-editor">
-        <img
-          draggable="false"
-          src={image}
-          ref={this.imageRef}
-          alt=""
-          onWheel={this.handleResize}
+      <>
+        <Editor
+          instance={(editor: EditorType) => {
+            this.editor = editor;
+          }}
+          onMouseMove={debounce(this.handleMouseMove, 1)}
+          onMouseEnter={this.tool.onMouseEnter}
+          onMouseLeave={this.tool.onMouseLeave}
+          onMouseUp={this.tool.onMouseUp}
+          onMouseDown={this.tool.onMouseDown}
         />
-        <canvas
-          draggable="false"
-          onWheel={this.handleResize}
-          onMouseLeave={this.stopDrawing}
-          onMouseUp={this.finishDrawing}
-          onMouseDown={this.startDrawing}
-          onMouseEnter={this.continueDrawing}
-          onMouseMove={this.drawTool}
-          ref={this.canvasRef}
-        />
-      </div>
+      </>
     );
   }
 }
 
-export default connect(mapStateToProps, dispatchToProps)(GraphicEditor);
+export default connect(mapStateToProps)(GraphicEditor);
